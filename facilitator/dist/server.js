@@ -3,7 +3,9 @@ import express from "express";
 import cors from "cors";
 import { ethers } from "ethers";
 import { Aptos, AptosConfig, Network, Deserializer, SimpleTransaction, AccountAuthenticator, } from "@aptos-labs/ts-sdk";
-import erc20abi from "./erc20abi.json";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const erc20abi = require("./erc20abi.json");
 // ─────────────────────────────────────────────────────────────────────────────
 // Chain Configuration for EVM Networks (exact scheme)
 // ─────────────────────────────────────────────────────────────────────────────
