@@ -1,0 +1,1356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>x402plus — HTTP 402 Payment Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #FAFAF7;
+        --bg-warm: #F3F1EC;
+        --card: #FFFFFF;
+        --accent: #0D9488;
+        --accent-hover: #0F766E;
+        --accent-light: #CCFBF1;
+        --accent-muted: #E6FAF7;
+        --success: #16A34A;
+        --success-light: #DCFCE7;
+        --warning: #CA8A04;
+        --warning-light: #FEF9C3;
+        --error: #DC2626;
+        --error-light: #FEE2E2;
+        --ink: #1A1A1A;
+        --text: #374151;
+        --text-muted: #6B7280;
+        --text-light: #9CA3AF;
+        --border: #E5E3DD;
+        --border-strong: #D1CFC8;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --radius-lg: 16px;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.07);
+        --shadow-lg: 0 12px 40px rgba(0,0,0,0.10);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'DM Sans', -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════
+         NAV BAR
+         ════════════════════════════════════════════ */
+      .navbar {
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        padding: 0 1.5rem;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      .navbar-inner {
+        max-width: 900px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 60px;
+      }
+      .brand {
+        font-family: 'DM Serif Display', Georgia, serif;
+        font-size: 1.35rem;
+        color: var(--ink);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .brand em { font-style: italic; color: var(--accent); }
+      .brand-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 500;
+        padding: 3px 7px;
+        background: var(--accent-muted);
+        color: var(--accent);
+        border-radius: 4px;
+        letter-spacing: 0.03em;
+      }
+      /* step1 in the navbar — just the wallet area */
+      #step1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: opacity 0.3s;
+      }
+      #step1.completed #connectBtn {
+        background: var(--success-light);
+        color: var(--success);
+        border-color: #BBF7D0;
+      }
+
+      /* ════════════════════════════════════════════
+         LAYOUT
+         ════════════════════════════════════════════ */
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      /* ════════════════════════════════════════════
+         PROTOCOL FLOW — the horizontal "how it works"
+         ════════════════════════════════════════════ */
+      .protocol-flow {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        margin-bottom: 2.5rem;
+        animation: fadeUp 0.5s ease both;
+      }
+      .pf-step {
+        flex: 1;
+        text-align: center;
+        padding: 1.25rem 0.75rem;
+        position: relative;
+        background: var(--card);
+        border: 1px solid var(--border);
+      }
+      .pf-step:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+      .pf-step:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+      .pf-step:not(:last-child) { border-right: none; }
+      .pf-step:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        right: -10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-left: 10px solid var(--border);
+        z-index: 2;
+      }
+      .pf-step:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: 7px solid transparent;
+        border-bottom: 7px solid transparent;
+        border-left: 9px solid var(--card);
+        z-index: 3;
+      }
+      .pf-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-light);
+        margin-bottom: 6px;
+      }
+      .pf-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+      .pf-desc {
+        font-size: 12px;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+
+      /* ════════════════════════════════════════════
+         RESOURCE CARD — the "product" you're paying for
+         ════════════════════════════════════════════ */
+      .resource-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+        animation: fadeUp 0.5s ease 0.1s both;
+      }
+      .resource-top {
+        display: flex;
+        align-items: stretch;
+      }
+      .resource-preview {
+        width: 200px;
+        min-height: 180px;
+        background: linear-gradient(135deg, #E0F2FE 0%, #CCFBF1 50%, #FEF9C3 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+      }
+      .lock-icon {
+        width: 56px;
+        height: 56px;
+        background: rgba(255,255,255,0.85);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      }
+      .resource-info {
+        flex: 1;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .resource-endpoint {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.75rem;
+      }
+      .http-method {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 8px;
+        background: var(--accent-muted);
+        color: var(--accent);
+        border-radius: 4px;
+        letter-spacing: 0.03em;
+      }
+      .http-path {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--ink);
+      }
+      .resource-desc {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 1rem;
+      }
+      .resource-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .resource-price {
+        font-family: 'DM Serif Display', Georgia, serif;
+        font-size: 1.75rem;
+        color: var(--ink);
+      }
+      .resource-price-unit {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 13px;
+        color: var(--text-muted);
+        font-weight: 500;
+      }
+      .resource-chain-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 4px 10px;
+        background: var(--bg-warm);
+        color: var(--text-muted);
+        border-radius: 4px;
+        border: 1px solid var(--border);
+      }
+
+      /* ════════════════════════════════════════════
+         CONFIG BAR
+         ════════════════════════════════════════════ */
+      .config-bar {
+        margin-bottom: 1.5rem;
+        animation: fadeUp 0.5s ease 0.12s both;
+      }
+      .config-bar-inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.875rem 1rem;
+      }
+      .config-bar-inner .input-group { margin-bottom: 0; }
+      @media (max-width: 640px) {
+        .config-bar-inner { grid-template-columns: 1fr; }
+      }
+
+      /* ════════════════════════════════════════════
+         PAYMENT SECTION — scheme selection + config
+         ════════════════════════════════════════════ */
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-light);
+        margin-bottom: 0.75rem;
+      }
+
+      /* Inline wallet connect prompt */
+      .connect-inline {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: var(--card);
+        border: 2px dashed var(--border-strong);
+        border-radius: var(--radius);
+        margin-bottom: 0.75rem;
+      }
+      .connect-inline-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--bg-warm);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        flex-shrink: 0;
+      }
+      .connect-inline-text {
+        flex: 1;
+      }
+      .connect-inline-text strong {
+        display: block;
+        font-size: 14px;
+        color: var(--ink);
+        margin-bottom: 2px;
+      }
+      .connect-inline-text span {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      /* step2: scheme selection */
+      #step2 {
+        margin-bottom: 1.5rem;
+        transition: opacity 0.3s;
+        animation: fadeUp 0.5s ease 0.15s both;
+      }
+      #step2.disabled .payment-options { opacity: 0.35; pointer-events: none; }
+      #step2.completed { opacity: 1; }
+      .payment-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .payment-card {
+        background: var(--card);
+        border: 2px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+      .payment-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+      }
+      .payment-card.selected {
+        border-color: var(--accent);
+        background: var(--accent-muted);
+      }
+      .payment-card.selected .pc-radio {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 3px #fff;
+      }
+      .pc-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 0.625rem;
+      }
+      .pc-radio {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 2px solid var(--border-strong);
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .pc-name {
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--ink);
+      }
+      .pc-scheme {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 2px 7px;
+        border-radius: 3px;
+        background: var(--bg-warm);
+        color: var(--text-muted);
+      }
+      .payment-card.selected .pc-scheme {
+        background: var(--accent-light);
+        color: var(--accent);
+      }
+      .pc-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-left: 28px;
+      }
+      .pc-features {
+        margin-top: 0.75rem;
+        margin-left: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .pc-feature {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pc-feature::before {
+        content: '';
+        width: 4px;
+        height: 4px;
+        background: var(--text-light);
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* step3: payment configuration */
+      #step3 {
+        transition: all 0.3s;
+        animation: fadeUp 0.3s ease both;
+      }
+      #step3.disabled { opacity: 0.35; pointer-events: none; }
+      #step3.hidden { display: none !important; }
+
+      .pay-panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+      .pay-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-warm);
+      }
+      .pay-panel-header-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+      .pay-panel-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+        flex: 1;
+      }
+      #step3Title { display: none; } /* title is in pay-panel-header now */
+      .pay-panel-body {
+        padding: 1.25rem;
+      }
+
+      /* ════════════════════════════════════════════
+         EXACT SECTION
+         ════════════════════════════════════════════ */
+      .config-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end;
+        background: var(--bg-warm);
+        padding: 0.75rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: 1rem;
+        border: 1px solid var(--border);
+      }
+      .config-row .input-group { flex: 1; margin-bottom: 0; }
+      .input-group { margin-bottom: 1rem; }
+      .input-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+      }
+      input[type="text"], select {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        color: var(--text);
+        outline: none;
+        transition: all 0.2s;
+      }
+      select { font-family: 'DM Sans', sans-serif; font-size: 14px; }
+      input[type="text"]:focus, select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(13,148,136,0.08);
+      }
+      .resource-display {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.875rem;
+        background: var(--bg-warm);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 1rem;
+      }
+      .resource-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        white-space: nowrap;
+      }
+      .resource-display code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .pay-action-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+      /* ════════════════════════════════════════════
+         INTENT SECTION — GRID ID flow
+         ════════════════════════════════════════════ */
+      .grid-id-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.875rem 1rem;
+        background: var(--accent-muted);
+        border: 1px solid #A7F3D0;
+        border-radius: var(--radius-sm);
+        margin-bottom: 1.25rem;
+      }
+      .grid-id-header-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .grid-id-header-text h4 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .grid-id-header-text p {
+        font-size: 12px;
+        color: var(--accent-hover);
+        margin-top: 2px;
+      }
+
+      /* Progress tracker — horizontal */
+      .grid-progress {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 0 0.25rem;
+      }
+      .gp-step {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-light);
+        white-space: nowrap;
+        transition: color 0.3s;
+      }
+      .gp-step.gp-active { color: var(--accent); }
+      .gp-step.gp-done { color: var(--success); }
+      .gp-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+        transition: all 0.3s;
+        flex-shrink: 0;
+      }
+      .gp-step.gp-active .gp-dot {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+      .gp-step.gp-done .gp-dot {
+        border-color: var(--success);
+        background: var(--success);
+        color: #fff;
+      }
+      .gp-line {
+        flex: 1;
+        height: 2px;
+        background: var(--border);
+        margin: 0 6px;
+        transition: background 0.3s;
+      }
+      .gp-line.gp-line-done { background: var(--success); }
+
+      /* Intent sub-steps (content panels) */
+      .intent-substep {
+        background: var(--bg-warm);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.125rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s;
+      }
+      .intent-substep.active {
+        background: #fff;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(13,148,136,0.06);
+      }
+      .intent-substep.completed {
+        background: #FAFDFB;
+        border-color: #BBF7D0;
+      }
+      .substep-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .substep-icon {
+        width: 24px;
+        height: 24px;
+        background: var(--border);
+        color: var(--text-muted);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        transition: all 0.3s;
+      }
+      .intent-substep.active .substep-icon {
+        background: var(--accent);
+        color: #fff;
+      }
+      .intent-substep.completed .substep-icon {
+        background: var(--success);
+        color: #fff;
+      }
+      .intent-substep.completed .substep-icon::after { content: '\2713'; }
+      .intent-substep.completed .substep-icon span { display: none; }
+      .substep-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--ink);
+        flex: 1;
+      }
+      .substep-content { padding-left: 36px; }
+      .substep-desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+      }
+
+      /* ════════════════════════════════════════════
+         BUTTONS
+         ════════════════════════════════════════════ */
+      button {
+        padding: 0.6rem 1.2rem;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      .btn-primary {
+        background: var(--ink);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: #333;
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+      .btn-success {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-success:hover:not(:disabled) {
+        background: var(--accent-hover);
+        box-shadow: 0 4px 12px rgba(13,148,136,0.3);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover:not(:disabled) {
+        background: var(--bg-warm);
+        border-color: var(--border-strong);
+      }
+      .btn-wallet {
+        background: var(--ink);
+        color: #fff;
+        padding: 0.5rem 1.1rem;
+        font-size: 13px;
+        border-radius: 8px;
+      }
+      .btn-wallet:hover:not(:disabled) { background: #333; }
+
+      /* ════════════════════════════════════════════
+         BADGES
+         ════════════════════════════════════════════ */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      .badge-info { background: var(--bg-warm); color: var(--text-muted); }
+      .badge-success { background: var(--success-light); color: var(--success); }
+      .badge-warning { background: var(--warning-light); color: var(--warning); }
+      .badge-error { background: var(--error-light); color: var(--error); }
+
+      .connected-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--success);
+        background: var(--success-light);
+        padding: 5px 12px;
+        border-radius: 6px;
+        border: 1px solid #BBF7D0;
+      }
+      .connected-badge::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        background: var(--success);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      /* ════════════════════════════════════════════
+         DEPOSIT ADDRESSES
+         ════════════════════════════════════════════ */
+      .deposit-addresses { display: flex; flex-direction: column; gap: 0.5rem; }
+      .deposit-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 0.6rem 0.75rem;
+      }
+      .deposit-chain {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        min-width: 80px;
+      }
+      .deposit-address {
+        flex: 1;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--text);
+        background: var(--bg-warm);
+        padding: 5px 9px;
+        border-radius: 5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 1px solid var(--border);
+      }
+      a.deposit-address { text-decoration: none; color: inherit; }
+      a.deposit-address:hover { background: var(--accent-light); border-color: #99F6E4; }
+      .copy-btn {
+        padding: 5px 12px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--ink);
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .copy-btn:hover { background: #333; }
+      .copy-btn.copied { background: var(--success); }
+      .deposit-loading { text-align: center; color: var(--text-muted); font-size: 13px; padding: 1rem; }
+      .redirect-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 5px;
+        font-size: 13px;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-weight: 700;
+      }
+      .redirect-icon:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+      /* ════════════════════════════════════════════
+         STATUS GRID
+         ════════════════════════════════════════════ */
+      .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+      .status-box {
+        background: var(--bg-warm);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        text-align: center;
+        border: 1px solid var(--border);
+      }
+      .status-box .value { font-size: 1.75rem; font-weight: 700; color: var(--ink); }
+      .status-box .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+      /* ════════════════════════════════════════════
+         ALERT
+         ════════════════════════════════════════════ */
+      .alert {
+        padding: 0.875rem;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        margin-bottom: 1rem;
+        line-height: 1.6;
+      }
+      .alert-info { background: var(--accent-muted); border: 1px solid #99F6E4; color: var(--accent-hover); }
+      .alert-success { background: var(--success-light); border: 1px solid #BBF7D0; color: #15803D; }
+      .alert-warning { background: var(--warning-light); border: 1px solid #FDE68A; color: #A16207; }
+      .alert-error { background: var(--error-light); border: 1px solid #FECACA; color: #B91C1C; }
+      .alert strong { display: block; margin-bottom: 4px; }
+
+      /* ════════════════════════════════════════════
+         CONSOLE LOG
+         ════════════════════════════════════════════ */
+      .console-section {
+        margin-top: 2rem;
+        animation: fadeUp 0.5s ease 0.25s both;
+      }
+      .console-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 0.625rem 0;
+        user-select: none;
+      }
+      .console-toggle h4 {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-light);
+      }
+      .console-toggle .console-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+      .console-toggle .console-arrow {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--text-light);
+        transition: transform 0.2s;
+      }
+      .console-section.open .console-arrow { transform: rotate(180deg); }
+      pre {
+        background: #1A1A1A;
+        color: #D1D5DB;
+        padding: 1rem;
+        border-radius: var(--radius);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        line-height: 1.6;
+        overflow: auto;
+        max-height: 250px;
+        border: 1px solid #333;
+      }
+
+      /* ════════════════════════════════════════════
+         MODAL
+         ════════════════════════════════════════════ */
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(26,26,26,0.5);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s;
+      }
+      .modal.visible { opacity: 1; visibility: visible; }
+      .modal-card {
+        background: var(--card);
+        width: min(520px, 92vw);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transform: translateY(10px) scale(0.98);
+        transition: transform 0.3s ease;
+        box-shadow: var(--shadow-lg);
+      }
+      .modal.visible .modal-card { transform: translateY(0) scale(1); }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--success-light);
+      }
+      .modal-header span {
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--success);
+      }
+      .modal-header button {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-header button:hover { background: rgba(0,0,0,0.05); color: var(--ink); }
+      .modal-body { padding: 1.25rem; }
+      .modal-body img {
+        display: block;
+        max-width: 100%;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+      }
+      .modal-body p {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 0.875rem;
+      }
+
+      /* ════════════════════════════════════════════
+         UTILITIES
+         ════════════════════════════════════════════ */
+      .hidden { display: none !important; }
+
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+      }
+
+      /* ════════════════════════════════════════════
+         RESPONSIVE
+         ════════════════════════════════════════════ */
+      @media (max-width: 640px) {
+        .protocol-flow { flex-direction: column; }
+        .pf-step { border-radius: 0; border-right: 1px solid var(--border); }
+        .pf-step:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+        .pf-step:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+        .pf-step:not(:last-child) { border-bottom: none; border-right: 1px solid var(--border); }
+        .pf-step::after, .pf-step::before { display: none; }
+        .resource-top { flex-direction: column; }
+        .resource-preview { width: 100%; min-height: 120px; }
+        .payment-options { grid-template-columns: 1fr; }
+        .grid-progress { flex-wrap: wrap; gap: 4px; }
+        .gp-line { display: none; }
+        .substep-content { padding-left: 0; margin-top: 0.5rem; }
+        .navbar-inner { padding: 0 0.5rem; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- ═══════ NAV ═══════ -->
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="brand">
+          x402<em>plus</em>
+          <span class="brand-tag">DEMO</span>
+        </div>
+        <div id="step1">
+          <span id="accountLabel"></span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+
+      <!-- ═══════ PROTOCOL FLOW DIAGRAM ═══════ -->
+      <div class="protocol-flow">
+        <div class="pf-step">
+          <div class="pf-num">01</div>
+          <div class="pf-code">GET /resource</div>
+          <div class="pf-desc">Client requests a paid API endpoint</div>
+        </div>
+        <div class="pf-step">
+          <div class="pf-num">02</div>
+          <div class="pf-code">402 Payment Required</div>
+          <div class="pf-desc">Server returns price, accepted schemes</div>
+        </div>
+        <div class="pf-step">
+          <div class="pf-num">03</div>
+          <div class="pf-code">X-PAYMENT: &lt;signed&gt;</div>
+          <div class="pf-desc">Client signs payment, re-sends request</div>
+        </div>
+        <div class="pf-step">
+          <div class="pf-num">04</div>
+          <div class="pf-code">200 OK</div>
+          <div class="pf-desc">Server verifies, settles, returns content</div>
+        </div>
+      </div>
+
+      <!-- ═══════ THE RESOURCE ═══════ -->
+      <div class="resource-card">
+        <div class="resource-top">
+          <div class="resource-preview">
+            <div class="lock-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+          </div>
+          <div class="resource-info">
+            <div class="resource-endpoint">
+              <span class="http-method">GET</span>
+              <span class="http-path">/api/premium-image</span>
+            </div>
+            <p class="resource-desc">A premium AI-generated image behind an HTTP 402 paywall. Pay to unlock the content.</p>
+            <div class="resource-meta">
+              <div>
+                <span class="resource-price" id="resourcePrice">$—</span>
+                <span class="resource-price-unit">USDC per request</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ CONFIG ═══════ -->
+      <div class="config-bar" id="configBar">
+        <div class="config-bar-inner">
+          <div class="input-group">
+            <label>Backend URL</label>
+            <input id="backendUrl" type="text" value="https://x402-backend.stableyard.fi" />
+          </div>
+          <div class="input-group">
+            <label>Facilitator URL</label>
+            <input id="facilitatorUrl" type="text" value="https://facilitator.stableyard.fi" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PAYMENT SCHEME SELECTION ═══════ -->
+      <div id="step2">
+        <div class="section-label">Choose Payment Scheme</div>
+
+        <div class="payment-options" id="paymentOptionsGrid">
+          <div class="payment-card" data-type="exact" id="cardExact">
+            <div class="pc-top">
+              <div class="pc-radio"></div>
+              <span class="pc-name">Direct Payment</span>
+              <span class="pc-scheme">exact</span>
+            </div>
+            <p class="pc-desc">Pay directly from your wallet on any supported chain.</p>
+            <div class="pc-features">
+              <span class="pc-feature">Requires USDC in your wallet</span>
+              <span class="pc-feature">One signature, no setup needed</span>
+              <span class="pc-feature">Standard x402 compatible</span>
+            </div>
+          </div>
+          <div class="payment-card" data-type="intent" id="cardIntent">
+            <div class="pc-top">
+              <div class="pc-radio"></div>
+              <span class="pc-name">GRID ID Vault</span>
+              <span class="pc-scheme">intent</span>
+            </div>
+            <p class="pc-desc">Pay from a pre-funded vault. Deposit once, pay anywhere.</p>
+            <div class="pc-features">
+              <span class="pc-feature">Deposit once, use across all chains</span>
+              <span class="pc-feature">Zero gas per payment</span>
+              <span class="pc-feature">x402plus cross-chain extension</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PAYMENT PANEL ═══════ -->
+      <div id="step3" class="disabled hidden">
+        <span id="step3Title" class="hidden">Configure &amp; Pay</span>
+        <div class="pay-panel">
+          <div class="pay-panel-header">
+            <div class="pay-panel-header-dot"></div>
+            <div class="pay-panel-title" id="payPanelTitle">Payment</div>
+          </div>
+          <div class="pay-panel-body">
+
+            <!-- ─── Exact Section ─── -->
+            <div id="exactSection" class="hidden">
+              <div class="resource-display">
+                <span class="resource-label">Endpoint</span>
+                <code id="exactResourceUrl">/api/premium-image</code>
+              </div>
+              <div class="input-group">
+                <label>Network</label>
+                <select id="networkSelect">
+                  <optgroup label="Mainnet">
+                    <option value="ethereum">Ethereum</option>
+                    <option value="polygon" selected>Polygon</option>
+                    <option value="base">Base</option>
+                    <option value="solana">Solana</option>
+                    <option value="movement">Movement</option>
+                  </optgroup>
+                  <optgroup label="Testnet">
+                    <option value="polygon-amoy">Polygon Amoy</option>
+                    <option value="base-sepolia">Base Sepolia</option>
+                    <option value="solana-devnet">Solana Devnet</option>
+                    <option value="movement-testnet">Movement Testnet</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div id="evmWalletRow" style="margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-warm); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                  <button class="btn-primary" id="connectEvmBtn" style="white-space: nowrap;">Connect EVM Wallet</button>
+                  <span id="evmAccountLabel" style="font-size: 13px; color: var(--text-muted);"></span>
+                </div>
+              </div>
+              <div class="hidden" id="movementWalletRow" style="margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-warm); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                  <button class="btn-primary" id="connectMovementBtn" style="white-space: nowrap;">Connect Movement Wallet</button>
+                  <span id="movementAccountLabel" style="font-size: 13px; color: var(--text-muted);"></span>
+                </div>
+              </div>
+              <div class="hidden" id="solanaWalletRow" style="margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-warm); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                  <button class="btn-primary" id="connectSolanaBtn" style="white-space: nowrap;">Connect Phantom Wallet</button>
+                  <span id="solanaAccountLabel" style="font-size: 13px; color: var(--text-muted);"></span>
+                </div>
+              </div>
+              <div class="pay-action-row">
+                <button class="btn-success" id="payExactBtn">Sign &amp; Pay</button>
+                <span id="exactStatusBadge" class="badge badge-info">Ready</span>
+              </div>
+              <div id="exactError" class="alert alert-error hidden" style="margin-top: 0.75rem;"></div>
+            </div>
+
+            <!-- ─── Intent Section ─── -->
+            <div id="intentSection" class="hidden">
+              <div id="intentEvmWalletRow" style="margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-warm); border: 1px solid var(--border); border-radius: var(--radius-sm);">
+                  <button class="btn-primary" id="connectEvmIntentBtn" style="white-space: nowrap;">Connect EVM Wallet</button>
+                  <span id="evmIntentAccountLabel" style="font-size: 13px; color: var(--text-muted);"></span>
+                </div>
+              </div>
+              <div class="grid-id-header">
+                <div class="grid-id-header-icon">G</div>
+                <div class="grid-id-header-text">
+                  <h4>GRID ID Setup</h4>
+                  <p>Your cross-chain payment vault powered by Stableyard</p>
+                </div>
+              </div>
+
+              <!-- Progress tracker -->
+              <div class="grid-progress" id="gridProgress">
+                <div class="gp-step gp-active" id="gpCreate"><div class="gp-dot">1</div> Create</div>
+                <div class="gp-line" id="gpLine1"></div>
+                <div class="gp-step" id="gpActivate"><div class="gp-dot">2</div> Activate</div>
+                <div class="gp-line" id="gpLine2"></div>
+                <div class="gp-step" id="gpDeposit"><div class="gp-dot">3</div> Deposit</div>
+                <div class="gp-line" id="gpLine3"></div>
+                <div class="gp-step" id="gpPay"><div class="gp-dot">4</div> Pay</div>
+              </div>
+
+              <!-- Sub-step A: Create GRID ID -->
+              <div class="intent-substep" id="substepAccount">
+                <div class="substep-header">
+                  <span class="substep-icon" id="accountIcon"><span>1</span></span>
+                  <span class="substep-title">Create GRID ID</span>
+                  <span id="accountStatusBadge" class="badge badge-info">Not Created</span>
+                </div>
+                <div class="substep-content">
+                  <p class="substep-desc">Creates a smart-contract vault (Safe) that holds your funds across all supported chains.</p>
+                  <button class="btn-primary" id="createAccountBtn">Create GRID ID</button>
+                  <div id="vaultAddressDisplay" class="hidden" style="margin-top: 0.75rem;">
+                    <div class="deposit-row" style="background: #FAFDFB; border-color: #BBF7D0;">
+                      <span class="deposit-chain" style="color: var(--success);">Vault</span>
+                      <a class="deposit-address" id="vaultAddressText" href="#" target="_blank" style="text-decoration:none;color:inherit;"></a>
+                      <a id="vaultLinkBtn" href="#" target="_blank" class="redirect-icon" title="View on Polygonscan">&#8599;</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sub-step B: Activate Vault -->
+              <div class="intent-substep hidden" id="substepActivate">
+                <div class="substep-header">
+                  <span class="substep-icon" id="activateIcon"><span>2</span></span>
+                  <span class="substep-title">Activate Vault</span>
+                  <span id="activateStatusBadge" class="badge badge-warning">Pending</span>
+                </div>
+                <div class="substep-content">
+                  <p class="substep-desc">Sign a Safe transaction to enable the spending module on your vault.</p>
+                  <button class="btn-primary" id="activateVaultBtn">Sign &amp; Activate</button>
+                </div>
+              </div>
+
+              <!-- Sub-step C: Deposit Funds -->
+              <div class="intent-substep hidden" id="substepDeposit">
+                <div class="substep-header">
+                  <span class="substep-icon" id="depositIcon"><span>3</span></span>
+                  <span class="substep-title">Deposit Funds</span>
+                  <span id="balanceBadge" class="badge badge-info">$0.00</span>
+                </div>
+                <div class="substep-content">
+                  <p class="substep-desc">Send USDC or USDT to your deposit address on any supported chain. <strong id="depositHint"></strong></p>
+                  <div class="deposit-addresses" id="depositAddresses">
+                    <div class="deposit-loading">Loading deposit addresses...</div>
+                  </div>
+                  <button class="btn-secondary" id="refreshBalanceBtn" style="margin-top: 0.75rem;">Refresh Balance</button>
+                </div>
+              </div>
+
+              <!-- Sub-step D: Pay -->
+              <div class="intent-substep hidden" id="substepPay">
+                <div class="substep-header">
+                  <span class="substep-icon" id="payIcon"><span>4</span></span>
+                  <span class="substep-title">Pay for Content</span>
+                  <span id="statusBadge" class="badge badge-info">Ready</span>
+                </div>
+                <div class="substep-content">
+                  <div class="resource-display">
+                    <span class="resource-label">Endpoint</span>
+                    <code id="intentResourceUrl">/api/premium-image</code>
+                  </div>
+                  <button class="btn-success" id="payIntentBtn" disabled>
+                    <span id="payIntentBtnText">Pay with Intent</span>
+                  </button>
+                  <div id="intentError" class="alert alert-error hidden" style="margin-top: 0.75rem;"></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ CONSOLE LOG ═══════ -->
+      <div class="console-section" id="consoleSection">
+        <div class="console-toggle" id="consoleToggle">
+          <div class="console-dot"></div>
+          <h4>HTTP Exchange Log</h4>
+          <span class="console-arrow">&#9662;</span>
+        </div>
+        <pre id="log" style="display:none">Waiting for action...</pre>
+      </div>
+
+    </div>
+
+    <!-- ═══════ MODAL ═══════ -->
+    <div id="modal" class="modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span>200 OK &mdash; Content Unlocked</span>
+          <button id="modalClose">&times;</button>
+        </div>
+        <div class="modal-body">
+          <img id="modalImg" />
+          <p id="modalMeta"></p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+    <script>
+      // Console toggle
+      document.getElementById('consoleToggle')?.addEventListener('click', () => {
+        const section = document.getElementById('consoleSection');
+        section.classList.toggle('open');
+        const pre = section.querySelector('pre');
+        pre.style.display = section.classList.contains('open') ? '' : 'none';
+      });
+    </script>
+  </body>
+</html>
